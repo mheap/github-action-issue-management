@@ -15,7 +15,15 @@ Toolkit.run(async tools => {
   // with the correct permissions comments. Permission could mean
   // being in the correct team, or having write+ access
   if (tools.context.event == "issue_comment" && tools.context.payload.action == "created") {
-    tools.log.info("Comment added")
+    const perms = (await tools.github.repos.getCollaboratorPermissionLevel({
+      ...tools.context.repo,
+      username: tools.context.actor
+    })).data;
+
+    console.log(perms);
+
+    // await removeLabels(tools, ["needs-triage"]);
+    // await addLabels(tools, ["under-triage"]);
   }
 
   tools.exit.success("Issue managed!")
@@ -23,6 +31,14 @@ Toolkit.run(async tools => {
 
 function addLabels(tools, labels) {
   return tools.github.issues.addLabels({
+    ...tools.context.repo,
+    issue_number: tools.context.issue.number,
+    labels
+  });
+}
+
+function removeLabels(tools, labels) {
+  return tools.github.issues.removeLabels({
     ...tools.context.repo,
     issue_number: tools.context.issue.number,
     labels
