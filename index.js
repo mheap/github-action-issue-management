@@ -1,9 +1,18 @@
 const { Toolkit } = require('actions-toolkit')
+const { Octokit } = require("@octokit/rest");
 
 // Run your GitHub Action!
 Toolkit.run(async tools => {
 
-  console.log(tools.context)
+  tools.github = new Octokit({
+    "auth": process.env.GITHUB_TOKEN,
+    log: {
+      debug: console.log,
+      info: console.log,
+      warn: console.warn,
+      error: console.error
+    }
+  })
 
   // Add a triage label to new pull requests
   if (tools.context.event == "pull_request" && tools.context.payload.action == "opened") {
@@ -16,20 +25,17 @@ Toolkit.run(async tools => {
   // being in the correct team, or having write+ access
   if (tools.context.event == "issue_comment" && tools.context.payload.action == "created") {
     console.log("Running on issue comment")
-
-    const allowed = ["write", "admin"];
-
+    
     const perms = (await tools.github.repos.getCollaboratorPermissionLevel({
       ...tools.context.repo,
       username: tools.context.actor
     }));
 
     console.log(perms);
+    
 
-    if (allowed.includes(perms.permission)) {
-      await removeLabels(tools, ["needs-triage"]);
-      await addLabels(tools, ["under-triage"]);
-    }
+    // await removeLabels(tools, ["needs-triage"]);
+    // await addLabels(tools, ["under-triage"]);
   }
 
   tools.exit.success("Issue managed!")
