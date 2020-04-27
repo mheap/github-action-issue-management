@@ -3,8 +3,10 @@ const { Toolkit } = require('actions-toolkit')
 // Run your GitHub Action!
 Toolkit.run(async tools => {
 
+  console.log(tools.context.event)
+
   // Add a triage label to new pull requests
-  if (tools.context.payload.pull_request.action == "opened") {
+  if (tools.context.event == "pull_request" && tools.context.payload.pull_request.action == "opened") {
     await addLabels(tools, ["needs-triage"]);
     return;
   }
@@ -12,7 +14,7 @@ Toolkit.run(async tools => {
   // Update labels to show that it's being triaged when someone
   // with the correct permissions comments. Permission could mean
   // being in the correct team, or having write+ access
-  if (tools.context.payload.issue_comment.action == "created") {
+  if (tools.context.event == "issue_comment" && tools.context.payload.issue_comment.action == "created") {
     tools.log.info("Comment added")
   }
 
