@@ -3,17 +3,6 @@ const { Octokit } = require("@octokit/rest");
 
 // Run your GitHub Action!
 Toolkit.run(async tools => {
-
-  tools.github = new Octokit({
-    "auth": process.env.GITHUB_TOKEN,
-    log: {
-      debug: console.log,
-      info: console.log,
-      warn: console.warn,
-      error: console.error
-    }
-  })
-
   // Add a triage label to new pull requests
   if (tools.context.event == "pull_request" && tools.context.payload.action == "opened") {
     await addLabels(tools, ["needs-triage"]);
@@ -26,33 +15,43 @@ Toolkit.run(async tools => {
   if (tools.context.event == "issue_comment" && tools.context.payload.action == "created") {
     console.log("Running on issue comment")
     
+    const allowed = ['admin', 'write'];
+
     const perms = (await tools.github.repos.getCollaboratorPermissionLevel({
       ...tools.context.repo,
       username: tools.context.actor
-    }));
+    })).data;
 
-    console.log(perms);
+    if (allowed.includes(perms.permission)) {
+      await removeLabel(tools, "needs-triage");
+      await addLabels(tools, ["under-triage"]);
+    }
     
-
-    // await removeLabels(tools, ["needs-triage"]);
-    // await addLabels(tools, ["under-triage"]);
   }
 
   tools.exit.success("Issue managed!")
 })
 
-function addLabels(tools, labels) {
-  return tools.github.issues.addLabels({
+async function addLabels(tools, labels) {
+  tools.log.pending("Adding Labels: ", labels)
+  await tools.github.issues.addLabels({
     ...tools.context.repo,
     issue_number: tools.context.issue.number,
     labels
   });
+  tools.log.complete("Labels added: ", labels)
 }
 
-function removeLabels(tools, labels) {
-  return tools.github.issues.removeLabels({
-    ...tools.context.repo,
-    issue_number: tools.context.issue.number,
-    labels
-  });
+async function removeLabel(tools, name) {
+  tools.log.info("Removing Label: ", name)
+  try {
+    await tools.github.issues.removeLabel({
+      ...tools.context.repo,
+      issue_number: tools.context.issue.number,
+      name
+    });
+    tools.log.complete("Label removed: ", name)
+  } catch (e) {
+    tools.log.complete("Error removing label: ", name)
+  }
 }
