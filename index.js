@@ -21,6 +21,7 @@ Toolkit.run(async (tools) => {
       // Add a triage label to new pull requests
       "issues.opened": onIssueOpened,
       "issues.closed": onIssueClosed,
+      "issues.reopened": onIssueReopened,
       "pull_request.opened": onIssueOpened,
       "issue_comment.created": onIssueComment,
     },
@@ -31,6 +32,10 @@ Toolkit.run(async (tools) => {
 });
 
 async function onIssueOpened(tools) {
+  return addLabels(tools, ["needs-triage"]);
+}
+
+async function onIssueReopened(tools) {
   return addLabels(tools, ["needs-triage"]);
 }
 
