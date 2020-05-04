@@ -20,6 +20,7 @@ Toolkit.run(async (tools) => {
     {
       // Add a triage label to new pull requests
       "issues.opened": onIssueOpened,
+      "issues.closed": onIssueClosed,
       "pull_request.opened": onIssueOpened,
       "issue_comment.created": onIssueComment,
     },
@@ -49,6 +50,20 @@ async function onIssueComment(tools) {
   if (allowed.includes(perms.permission)) {
     await removeLabel(tools, "needs-triage");
     await addLabels(tools, ["under-triage"]);
+  }
+}
+
+async function onIssueClosed(tools) {
+  // TODO: Only try and remove labels that are on the issue
+  // Read using payload.issue.labels on labels that we know about
+  await removeLabel(tools, "needs-triage");
+  await removeLabel(tools, "under-triage");
+
+  const payload = tools.context.payload;
+  if (payload.issue.user.id === payload.sender.id) {
+    await addLabels(tools, ["closed-by-op"]);
+  } else {
+    await addLabels(tools, ["closed-by-team"]);
   }
 }
 
