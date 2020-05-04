@@ -4,8 +4,8 @@ const router = require("@mheap/action-router");
 /*
  * When an issue or a PR is opened, add the needs-triage label
  * When someone with write+ (configurable) access comments, add waiting-for-author label
- * When OP comments, add awaiting-reply label
- * When someone other than OP or maintainer comments, add needs-reply label
+ * When OP comments, add waiting-for-team label
+ * When someone other than OP or maintainer comments, add needs-retriage label
  * When PR gets new commits, add updated-commits label
  * When PR is closed, remove all labels and add closed-by-op, closed-by-team
  *
@@ -47,9 +47,21 @@ async function onIssueComment(tools) {
     })
   ).data;
 
+  // If it's someone with write access
   if (allowed.includes(perms.permission)) {
     await removeLabel(tools, "needs-triage");
-    await addLabels(tools, ["under-triage"]);
+    await removeLabel(tools, "waiting-for-team");
+    await addLabels(tools, ["waiting-for-author"]);
+    return;
+  }
+
+  const payload = tools.context.payload;
+
+  // If it's the original author
+  if (payload.sender.id === payload.issue.user.id) {
+    await removeLabel(tools, "waiting-for-author");
+    await addLabels(tools, ["waiting-for-team"]);
+    return;
   }
 }
 
@@ -74,7 +86,7 @@ async function addLabels(tools, labels) {
     issue_number: tools.context.issue.number,
     labels,
   });
-  tools.log.error("Labels added: ", labels);
+  tools.log.complete("Labels added: ", labels);
 }
 
 async function removeLabel(tools, name) {
