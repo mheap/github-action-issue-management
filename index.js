@@ -2,12 +2,7 @@ const { Toolkit } = require("actions-toolkit");
 const router = require("@mheap/action-router");
 
 /*
- * When an issue or a PR is opened, add the needs-triage label
  * When someone with write+ (configurable) access comments, add waiting-for-author label
- * When OP comments, add waiting-for-team label
- * When someone other than OP or maintainer comments, add needs-retriage label
- * When PR gets new commits, add updated-commits label
- * When PR is closed, remove all labels and add closed-by-op, closed-by-team
  *
  * Edge cases:
  *
@@ -18,11 +13,13 @@ const router = require("@mheap/action-router");
 Toolkit.run(async (tools) => {
   await router(
     {
-      // Add a triage label to new pull requests
       "issues.opened": onIssueOpened,
       "issues.closed": onIssueClosed,
       "issues.reopened": onIssueReopened,
       "pull_request.opened": onIssueOpened,
+      "pull_request.closed": onIssueClosed,
+      "pull_request.reopened": onIssueReopened,
+      "pull_request.review_requested": isWaitingForTeam,
       "issue_comment.created": onIssueComment,
     },
     [tools]
@@ -57,8 +54,7 @@ async function onIssueComment(tools) {
   // If it's someone with write access
   if (allowed.includes(perms.permission)) {
     await removeLabel(tools, "needs-triage");
-    await removeLabel(tools, "waiting-for-team");
-    await addLabels(tools, ["waiting-for-author"]);
+    await isWaitingForAuthor(tools);
     return;
   }
 
@@ -66,10 +62,24 @@ async function onIssueComment(tools) {
 
   // If it's the original author
   if (payload.sender.id === payload.issue.user.id) {
-    await removeLabel(tools, "waiting-for-author");
-    await addLabels(tools, ["waiting-for-team"]);
+    await isWaitingForTeam(tools);
     return;
   }
+
+  // It's someone else
+  // We want to keep waiting-for-author and waiting-for-team but also
+  // flag it as having new people commenting
+  await addLabels(tools, ["needs-triage"]);
+}
+
+async function isWaitingForTeam(tools) {
+  await removeLabel(tools, "waiting-for-author");
+  await addLabels(tools, ["waiting-for-team"]);
+}
+
+async function isWaitingForAuthor(tools) {
+  await removeLabel(tools, "waiting-for-team");
+  await addLabels(tools, ["waiting-for-author"]);
 }
 
 async function onIssueClosed(tools) {
