@@ -36,6 +36,8 @@ async function onIssueOpened(tools) {
 }
 
 async function onIssueReopened(tools) {
+  await removeLabel(tools, "closed-by-team");
+  await removeLabel(tools, "closed-by-author");
   return addLabels(tools, ["needs-triage"]);
 }
 
