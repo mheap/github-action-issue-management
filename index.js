@@ -69,11 +69,12 @@ async function onIssueClosed(tools) {
   // TODO: Only try and remove labels that are on the issue
   // Read using payload.issue.labels on labels that we know about
   await removeLabel(tools, "needs-triage");
-  await removeLabel(tools, "under-triage");
+  await removeLabel(tools, "waiting-for-team");
+  await removeLabel(tools, "waiting-for-author");
 
   const payload = tools.context.payload;
   if (payload.issue.user.id === payload.sender.id) {
-    await addLabels(tools, ["closed-by-op"]);
+    await addLabels(tools, ["closed-by-author"]);
   } else {
     await addLabels(tools, ["closed-by-team"]);
   }
