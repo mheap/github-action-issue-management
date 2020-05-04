@@ -7,7 +7,11 @@ const router = require("@mheap/action-router");
  * When OP comments, add awaiting-reply label
  * When someone other than OP or maintainer comments, add needs-reply label
  * When PR gets new commits, add updated-commits label
- * When PR is closed, remove all labels and add closed-by-op, closed-by-team labels
+ * When PR is closed, remove all labels and add closed-by-op, closed-by-team
+ *
+ * Edge cases:
+ *
+ * OP has write+ access
  */
 
 // Run your GitHub Action!
@@ -15,8 +19,8 @@ Toolkit.run(async (tools) => {
   await router(
     {
       // Add a triage label to new pull requests
-      "issue.opened": onPrOpened,
-      "pull_request.opened": onPrOpened,
+      "issues.opened": onIssueOpened,
+      "pull_request.opened": onIssueOpened,
       "issue_comment.created": onIssueComment,
     },
     [tools]
@@ -25,7 +29,7 @@ Toolkit.run(async (tools) => {
   tools.exit.success("Issue managed!");
 });
 
-async function onPrOpened(tools) {
+async function onIssueOpened(tools) {
   return addLabels(tools, ["needs-triage"]);
 }
 
