@@ -1,16 +1,6 @@
 const { Toolkit } = require("actions-toolkit");
 const router = require("@mheap/action-router");
 
-/*
- * When someone with write+ (configurable) access comments, add waiting-for-author label
- *
- * Edge cases:
- *
- * OP has write+ access
- * Issue is closed when a comment is added. Check status before adding labels. What should we do if comment is added to a closed issue?
- */
-
-// Run your GitHub Action!
 Toolkit.run(async (tools) => {
   await router(
     {
@@ -45,6 +35,12 @@ async function onIssueReopened(tools) {
 async function onIssueComment(tools) {
   const allowed = ["admin", "write"];
   const payload = tools.context.payload;
+
+  // If it's already closed
+  if (payload.issue.closed_at) {
+    await addLabels(tools, ["necromancer"]);
+    return;
+  }
 
   // If it's the original author
   if (payload.sender.id === payload.issue.user.id) {

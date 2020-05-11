@@ -118,6 +118,22 @@ describe("Issue Management", () => {
   });
 
   describe("Issue Comment", () => {
+    it("exits early if the issue is already closed", async () => {
+      restoreTest = testEnv(
+        tools,
+        "issue_comment",
+        commentFrom({
+          author: "mheap",
+          commenter: "another-person",
+          closed_at: "2020-05-11T21:28:58Z",
+        })
+      );
+
+      expectLabelsAdded(["necromancer"]);
+      await action(tools);
+      expect(tools.exit.success).toHaveBeenCalledWith("Issue managed!");
+    });
+
     it("adds waiting-for-author if someone with write+ permissions comments", async () => {
       restoreTest = testEnv(
         tools,
@@ -238,7 +254,7 @@ function expectAssigneeAdded(username) {
     .reply(200);
 }
 
-function commentFrom({ author, commenter }) {
+function commentFrom({ author, commenter, closed_at }) {
   return {
     action: "created",
     issue: {
@@ -247,6 +263,7 @@ function commentFrom({ author, commenter }) {
         id: author,
         login: author,
       },
+      closed_at,
     },
     sender: { id: commenter, login: commenter },
   };
