@@ -7,6 +7,7 @@ const router = require("@mheap/action-router");
  * Edge cases:
  *
  * OP has write+ access
+ * Issue is closed when a comment is added. Check status before adding labels. What should we do if comment is added to a closed issue?
  */
 
 // Run your GitHub Action!
