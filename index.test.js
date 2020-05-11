@@ -129,6 +129,7 @@ describe("Issue Management", () => {
       );
 
       expectCollaboratorPermissionCheck("team-member", "admin");
+      expectAssigneeAdded("mheap");
       expectLabelRemoved(["needs-triage"]);
       expectLabelRemoved(["waiting-for-team"]);
       expectLabelsAdded(["waiting-for-author"]);
@@ -146,7 +147,6 @@ describe("Issue Management", () => {
         })
       );
 
-      expectCollaboratorPermissionCheck("mheap", "read");
       expectLabelRemoved(["waiting-for-author"]);
       expectLabelsAdded(["waiting-for-team"]);
       await action(tools);
@@ -165,6 +165,22 @@ describe("Issue Management", () => {
 
       expectCollaboratorPermissionCheck("another-person", "read");
       expectLabelsAdded(["needs-triage"]);
+      await action(tools);
+      expect(tools.exit.success).toHaveBeenCalledWith("Issue managed!");
+    });
+
+    it("ignores the author's collaborator permission if an issue is raised by a team member", async () => {
+      restoreTest = testEnv(
+        tools,
+        "issue_comment",
+        commentFrom({
+          author: "mheap",
+          commenter: "mheap",
+        })
+      );
+
+      expectLabelRemoved(["waiting-for-author"]);
+      expectLabelsAdded(["waiting-for-team"]);
       await action(tools);
       expect(tools.exit.success).toHaveBeenCalledWith("Issue managed!");
     });
@@ -214,6 +230,14 @@ function expectCollaboratorPermissionCheck(user, permission) {
     });
 }
 
+function expectAssigneeAdded(username) {
+  nock("https://api.github.com")
+    .post(`/repos/mheap/missing-repo/issues/14/assignees`, {
+      assignees: [username],
+    })
+    .reply(200);
+}
+
 function commentFrom({ author, commenter }) {
   return {
     action: "created",
@@ -221,6 +245,7 @@ function commentFrom({ author, commenter }) {
       number: 14,
       user: {
         id: author,
+        login: author,
       },
     },
     sender: { id: commenter, login: commenter },

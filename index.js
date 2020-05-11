@@ -46,6 +46,13 @@ async function onIssueComment(tools) {
   const allowed = ["admin", "write"];
   const payload = tools.context.payload;
 
+  // If it's the original author
+  if (payload.sender.id === payload.issue.user.id) {
+    await isWaitingForTeam(tools);
+    return;
+  }
+
+  // Otherwise we check their permissions
   const perms = (
     await tools.github.repos.getCollaboratorPermissionLevel({
       ...tools.context.repo,
@@ -56,13 +63,7 @@ async function onIssueComment(tools) {
   // If it's someone with write access
   if (allowed.includes(perms.permission)) {
     await removeLabel(tools, "needs-triage");
-    await isWaitingForAuthor(tools);
-    return;
-  }
-
-  // If it's the original author
-  if (payload.sender.id === payload.issue.user.id) {
-    await isWaitingForTeam(tools);
+    await isWaitingForAuthor(tools, payload.issue.user.login);
     return;
   }
 
@@ -77,9 +78,20 @@ async function isWaitingForTeam(tools) {
   await addLabels(tools, ["waiting-for-team"]);
 }
 
-async function isWaitingForAuthor(tools) {
+async function isWaitingForAuthor(tools, username) {
   await removeLabel(tools, "waiting-for-team");
   await addLabels(tools, ["waiting-for-author"]);
+  await addAssignee(tools, username);
+}
+
+async function addAssignee(tools, username) {
+  tools.log.pending("Adding assignee: ", username);
+  await tools.github.issues.addAssignees({
+    ...tools.context.repo,
+    issue_number: tools.context.issue.number,
+    assignees: [username],
+  });
+  tools.log.complete("Added assignee: ", username);
 }
 
 async function onIssueClosed(tools) {
