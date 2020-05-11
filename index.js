@@ -17,10 +17,10 @@ Toolkit.run(async (tools) => {
       "issues.opened": onIssueOpened,
       "issues.closed": onIssueClosed,
       "issues.reopened": onIssueReopened,
-      "pull_request.opened": onIssueOpened,
-      "pull_request.closed": onIssueClosed,
-      "pull_request.reopened": onIssueReopened,
-      "pull_request.review_requested": isWaitingForTeam,
+      // "pull_request.opened": onIssueOpened,
+      // "pull_request.closed": onIssueClosed,
+      // "pull_request.reopened": onIssueReopened,
+      // "pull_request.review_requested": isWaitingForTeam,
       "issue_comment.created": onIssueComment,
     },
     [tools]
@@ -44,11 +44,12 @@ async function onIssueReopened(tools) {
 // being in the correct team, or having write+ access
 async function onIssueComment(tools) {
   const allowed = ["admin", "write"];
+  const payload = tools.context.payload;
 
   const perms = (
     await tools.github.repos.getCollaboratorPermissionLevel({
       ...tools.context.repo,
-      username: tools.context.actor,
+      username: payload.sender.login,
     })
   ).data;
 
@@ -58,8 +59,6 @@ async function onIssueComment(tools) {
     await isWaitingForAuthor(tools);
     return;
   }
-
-  const payload = tools.context.payload;
 
   // If it's the original author
   if (payload.sender.id === payload.issue.user.id) {
@@ -109,7 +108,7 @@ async function addLabels(tools, labels) {
 }
 
 async function removeLabel(tools, name) {
-  tools.log.info("Removing Label: ", name);
+  tools.log.pending("Removing Label: ", name);
   try {
     await tools.github.issues.removeLabel({
       ...tools.context.repo,
