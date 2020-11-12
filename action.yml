@@ -1,8 +1,8 @@
 name: Issue Management
 description: Automatically manage issue comments
 runs:
-  using: docker
-  image: Dockerfile
+  using: node12
+  main: dist/index.js
 branding:
   icon: tag
   color: blue
