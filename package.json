@@ -1,10 +1,11 @@
 {
   "name": "github-action-issue-management",
   "private": true,
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "start": "node ./index.js",
-    "test": "jest"
+    "test": "jest",
+    "build": "npx @vercel/ncc build && npx convert-action"
   },
   "dependencies": {
     "@mheap/action-router": "^1.2.0",
