@@ -129,6 +129,7 @@ describe("Issue Management", () => {
         })
       );
 
+      expectCollaboratorPermissionCheck("another-person", "read");
       expectLabelsAdded(["necromancer"]);
       await action(tools);
       expect(tools.exit.success).toHaveBeenCalledWith("Issue managed!");
@@ -163,6 +164,7 @@ describe("Issue Management", () => {
         })
       );
 
+      expectCollaboratorPermissionCheck("mheap", "read");
       expectLabelRemoved(["waiting-for-author"]);
       expectLabelsAdded(["waiting-for-team"]);
       await action(tools);
@@ -195,6 +197,7 @@ describe("Issue Management", () => {
         })
       );
 
+      expectCollaboratorPermissionCheck("mheap", "admin");
       expectLabelRemoved(["waiting-for-author"]);
       expectLabelsAdded(["waiting-for-team"]);
       await action(tools);

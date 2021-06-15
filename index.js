@@ -36,6 +36,13 @@ async function onIssueComment(tools) {
   const allowed = ["admin", "write"];
   const payload = tools.context.payload;
 
+  // Fetch the actor's permissions on the repo
+  const { data: perms } =
+    await tools.github.repos.getCollaboratorPermissionLevel({
+      ...tools.context.repo,
+      username: payload.sender.login,
+    });
+
   // If it's already closed
   if (payload.issue.closed_at) {
     await addLabels(tools, ["necromancer"]);
@@ -47,14 +54,6 @@ async function onIssueComment(tools) {
     await isWaitingForTeam(tools);
     return;
   }
-
-  // Otherwise we check their permissions
-  const perms = (
-    await tools.github.repos.getCollaboratorPermissionLevel({
-      ...tools.context.repo,
-      username: payload.sender.login,
-    })
-  ).data;
 
   // If it's someone with write access
   if (allowed.includes(perms.permission)) {
