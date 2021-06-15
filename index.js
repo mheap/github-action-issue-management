@@ -95,6 +95,11 @@ async function isWaitingForAuthor(tools, username) {
 }
 
 async function addAssignee(tools, username) {
+  if (tools.inputs.disable_auto_assign === "on") {
+    tools.log.info("Auto-assign disabled. Not adding: ", username);
+    return;
+  }
+
   tools.log.pending("Adding assignee: ", username);
   await tools.github.issues.addAssignees({
     ...tools.context.repo,

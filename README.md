@@ -32,6 +32,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           necromancer_delay: "P7D" # This can be any ISO8601 duration
+          disable_auto_assign: "on"
 ```
 
 ## Available Configuration
@@ -44,7 +45,7 @@ jobs:
 
 ### Inputs
 
-| Name | Description |
-Default |
-| -------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `necromancer_delay` | The amount of time to wait before a new comment on a closed issue is considered necromancy. Set to `off` to disable this label | `P7D` 1|
+| Name                  | Description                                                                                                                    | Default |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| `necromancer_delay`   | The amount of time to wait before a new comment on a closed issue is considered necromancy. Set to `off` to disable this label | `P7D`   |
+| `disable_auto_assign` | Set to `on` to prevent the auto-assignment of issues when a response is added                                                  | `off`   |

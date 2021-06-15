@@ -36,6 +36,7 @@ describe("Issue Management", () => {
     tools.exit.success = jest.fn();
     tools.log.pending = jest.fn();
     tools.log.complete = jest.fn();
+    tools.log.info = jest.fn();
   });
 
   afterEach(() => {
@@ -214,6 +215,31 @@ describe("Issue Management", () => {
       expectLabelRemoved(["waiting-for-team"]);
       expectLabelsAdded(["waiting-for-author"]);
       await action(tools);
+      expect(tools.exit.success).toHaveBeenCalledWith("Issue managed!");
+    });
+
+    it("does not assign to the author if assignment is disabled", async () => {
+      restoreTest = testEnv(
+        tools,
+        "issue_comment",
+        commentFrom({
+          author: "mheap",
+          commenter: "team-member",
+        }),
+        {
+          INPUT_DISABLE_AUTO_ASSIGN: "on",
+        }
+      );
+
+      expectCollaboratorPermissionCheck("team-member", "admin");
+      expectLabelRemoved(["needs-triage"]);
+      expectLabelRemoved(["waiting-for-team"]);
+      expectLabelsAdded(["waiting-for-author"]);
+      await action(tools);
+      expect(tools.log.info).toHaveBeenCalledWith(
+        "Auto-assign disabled. Not adding: ",
+        "mheap"
+      );
       expect(tools.exit.success).toHaveBeenCalledWith("Issue managed!");
     });
 
