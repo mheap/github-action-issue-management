@@ -9,7 +9,9 @@ Automatically manage issue comments. This action:
 - Adds a `closed-by-author` label when the issue is closed by the issue author
 - Adds a `necromancer` label when the issue is commented on when it has been closed for a defined period (default 7 days). Collaborator comments do not trigger this label
 
-These labels can then be used to build up a search to see which issues need your attention, or to report on closed issues using the API in the future
+These labels can then be used to build up a search to see which issues need your attention, or to report on closed issues using the API in the future.
+
+To sync these labels to your repository, add the action then trigger a `workflow_dispatch` event in the `Actions` tab.
 
 ## Usage
 
@@ -20,6 +22,7 @@ on:
     types: [opened, closed, reopened]
   issue_comment:
     types: [created]
+  workflow_dispatch:
 
 jobs:
   issue-management:
