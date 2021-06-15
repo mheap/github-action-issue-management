@@ -50,6 +50,20 @@ describe("Issue Management", () => {
     jest.resetModules();
   });
 
+  describe("Sync Labels", () => {
+    it("adds the needs-triage label", async () => {
+      restoreTest = testEnv(tools, "workflow_dispatch", {});
+      expectLabelConfigured("needs-triage", "d73a4a");
+      expectLabelConfigured("waiting-for-author", "945893");
+      expectLabelConfigured("waiting-for-team", "E1811F");
+      expectLabelConfigured("closed-by-author", "87CA31");
+      expectLabelConfigured("closed-by-team", "EF9DDC");
+      expectLabelConfigured("necromancer", "70543e");
+      await action(tools);
+      expect(tools.exit.success).toHaveBeenCalledWith("Issue managed!");
+    });
+  });
+
   describe("Issue Opened", () => {
     it("adds the needs-triage label", async () => {
       restoreTest = testEnv(tools, "issues", {
@@ -343,6 +357,16 @@ function expectAssigneeAdded(username) {
   nock("https://api.github.com")
     .post(`/repos/mheap/missing-repo/issues/14/assignees`, {
       assignees: [username],
+    })
+    .reply(200);
+}
+
+function expectLabelConfigured(name, color) {
+  nock("https://api.github.com")
+    .post(`/repos/mheap/missing-repo/labels`, {
+      name,
+      description: /.+/i,
+      color,
     })
     .reply(200);
 }

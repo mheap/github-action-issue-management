@@ -5,6 +5,7 @@ const { parse, end } = require("iso8601-duration");
 Toolkit.run(async (tools) => {
   await router(
     {
+      workflow_dispatch: syncLabels,
       "issues.opened": onIssueOpened,
       "issues.closed": onIssueClosed,
       "issues.reopened": onIssueReopened,
@@ -19,6 +20,50 @@ Toolkit.run(async (tools) => {
 
   tools.exit.success("Issue managed!");
 });
+
+async function syncLabels(tools) {
+  const labels = [
+    {
+      name: "needs-triage",
+      description:
+        "Issue has been opened but not responded to by a team member",
+      color: "d73a4a",
+    },
+    {
+      name: "waiting-for-author",
+      description: "Team member has responded, awaiting OP reply",
+      color: "945893",
+    },
+    {
+      name: "waiting-for-team",
+      description: "OP has responded, awaiting team reply",
+      color: "E1811F",
+    },
+    {
+      name: "closed-by-author",
+      description: "The issue was closed by the OP",
+      color: "87CA31",
+    },
+    {
+      name: "closed-by-team",
+      description: "The issue was closed by a team member",
+      color: "EF9DDC",
+    },
+    {
+      name: "necromancer",
+      description:
+        "A comment has been added to an old issue by a non-team member",
+      color: "70543e",
+    },
+  ];
+
+  for (const label of labels) {
+    await tools.github.issues.createLabel({
+      ...tools.context.repo,
+      ...label,
+    });
+  }
+}
 
 async function onIssueOpened(tools) {
   return addLabels(tools, ["needs-triage"]);
