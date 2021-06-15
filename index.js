@@ -45,7 +45,9 @@ async function onIssueComment(tools) {
 
   // If it's already closed
   if (payload.issue.closed_at) {
-    await addLabels(tools, ["necromancer"]);
+    if (!allowed.includes(perms.permission)) {
+      await addLabels(tools, ["necromancer"]);
+    }
     return;
   }
 

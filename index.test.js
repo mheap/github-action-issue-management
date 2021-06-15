@@ -118,7 +118,7 @@ describe("Issue Management", () => {
   });
 
   describe("Issue Comment", () => {
-    it("exits early if the issue is already closed", async () => {
+    it("adds a necromancer label if the issue is closed and the commenter is not a collaborator", async () => {
       restoreTest = testEnv(
         tools,
         "issue_comment",
@@ -131,6 +131,22 @@ describe("Issue Management", () => {
 
       expectCollaboratorPermissionCheck("another-person", "read");
       expectLabelsAdded(["necromancer"]);
+      await action(tools);
+      expect(tools.exit.success).toHaveBeenCalledWith("Issue managed!");
+    });
+
+    it("does not add a necromancer label if the issue is closed and the commenter is a collaborator", async () => {
+      restoreTest = testEnv(
+        tools,
+        "issue_comment",
+        commentFrom({
+          author: "issue-author",
+          commenter: "mheap",
+          closed_at: "2020-05-11T21:28:58Z",
+        })
+      );
+
+      expectCollaboratorPermissionCheck("mheap", "admin");
       await action(tools);
       expect(tools.exit.success).toHaveBeenCalledWith("Issue managed!");
     });
