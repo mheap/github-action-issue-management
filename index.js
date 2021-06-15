@@ -1,5 +1,6 @@
 const { Toolkit } = require("actions-toolkit");
 const router = require("@mheap/action-router");
+const { parse, end } = require("iso8601-duration");
 
 Toolkit.run(async (tools) => {
   await router(
@@ -36,9 +37,30 @@ async function onIssueComment(tools) {
   const allowed = ["admin", "write"];
   const payload = tools.context.payload;
 
+  // Fetch the actor's permissions on the repo
+  const { data: perms } =
+    await tools.github.repos.getCollaboratorPermissionLevel({
+      ...tools.context.repo,
+      username: payload.sender.login,
+    });
+
   // If it's already closed
   if (payload.issue.closed_at) {
-    await addLabels(tools, ["necromancer"]);
+    // Commenting is not considered necromancy if they are a collaborator
+    if (!allowed.includes(perms.permission)) {
+      // Otherwise we check if the threshold has been met, or if this feature is disabled
+      const necromancerDelay = tools.inputs.necromancer_delay;
+      if (necromancerDelay !== "off") {
+        // Has the grace period for adding comments ended?
+        const now = Date.now();
+        const closedDate = new Date(payload.issue.closed_at);
+        const cutoffDate = end(parse(necromancerDelay), closedDate);
+
+        if (now > cutoffDate) {
+          await addLabels(tools, ["necromancer"]);
+        }
+      }
+    }
     return;
   }
 
@@ -47,14 +69,6 @@ async function onIssueComment(tools) {
     await isWaitingForTeam(tools);
     return;
   }
-
-  // Otherwise we check their permissions
-  const perms = (
-    await tools.github.repos.getCollaboratorPermissionLevel({
-      ...tools.context.repo,
-      username: payload.sender.login,
-    })
-  ).data;
 
   // If it's someone with write access
   if (allowed.includes(perms.permission)) {

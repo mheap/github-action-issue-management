@@ -118,17 +118,81 @@ describe("Issue Management", () => {
   });
 
   describe("Issue Comment", () => {
-    it("exits early if the issue is already closed", async () => {
+    it("does not add a necromancer label if the issue is closed and the commenter is a collaborator", async () => {
       restoreTest = testEnv(
         tools,
         "issue_comment",
         commentFrom({
-          author: "mheap",
-          commenter: "another-person",
+          author: "issue-author",
+          commenter: "mheap",
           closed_at: "2020-05-11T21:28:58Z",
         })
       );
 
+      expectCollaboratorPermissionCheck("mheap", "admin");
+      await action(tools);
+      expect(tools.exit.success).toHaveBeenCalledWith("Issue managed!");
+    });
+
+    it("does not add a necromancer label if the delay is set to 'off'", async () => {
+      restoreTest = testEnv(
+        tools,
+        "issue_comment",
+        commentFrom({
+          author: "issue-author",
+          commenter: "mheap",
+          closed_at: "2020-05-11T21:28:58Z",
+        }),
+        {
+          INPUT_NECROMANCER_DELAY: "off",
+        }
+      );
+
+      expectCollaboratorPermissionCheck("mheap", "read");
+      await action(tools);
+      expect(tools.exit.success).toHaveBeenCalledWith("Issue managed!");
+    });
+
+    it("does not add a necromancer label if the delay has not been met", async () => {
+      restoreTest = testEnv(
+        tools,
+        "issue_comment",
+        commentFrom({
+          author: "issue-author",
+          commenter: "mheap",
+          closed_at: "2020-05-11T21:28:58Z",
+        }),
+        {
+          INPUT_NECROMANCER_DELAY: "P7D",
+        }
+      );
+
+      // Mock current time to be 2020-05-13T21:28:58Z - 2 days later
+      jest.spyOn(Date, "now").mockImplementation(() => "1589405338000");
+
+      expectCollaboratorPermissionCheck("mheap", "read");
+      await action(tools);
+      expect(tools.exit.success).toHaveBeenCalledWith("Issue managed!");
+    });
+
+    it("adds a necromancer label if the delay has been exceeded", async () => {
+      restoreTest = testEnv(
+        tools,
+        "issue_comment",
+        commentFrom({
+          author: "issue-author",
+          commenter: "mheap",
+          closed_at: "2020-05-11T21:28:58Z",
+        }),
+        {
+          INPUT_NECROMANCER_DELAY: "P1D",
+        }
+      );
+
+      // Mock current time to be 2020-05-13T21:28:58Z - 2 days later
+      jest.spyOn(Date, "now").mockImplementation(() => "1589405338000");
+
+      expectCollaboratorPermissionCheck("mheap", "read");
       expectLabelsAdded(["necromancer"]);
       await action(tools);
       expect(tools.exit.success).toHaveBeenCalledWith("Issue managed!");
@@ -163,6 +227,7 @@ describe("Issue Management", () => {
         })
       );
 
+      expectCollaboratorPermissionCheck("mheap", "read");
       expectLabelRemoved(["waiting-for-author"]);
       expectLabelsAdded(["waiting-for-team"]);
       await action(tools);
@@ -195,6 +260,7 @@ describe("Issue Management", () => {
         })
       );
 
+      expectCollaboratorPermissionCheck("mheap", "admin");
       expectLabelRemoved(["waiting-for-author"]);
       expectLabelsAdded(["waiting-for-team"]);
       await action(tools);
@@ -203,7 +269,7 @@ describe("Issue Management", () => {
   });
 });
 
-function testEnv(tools, eventName, mockPayload) {
+function testEnv(tools, eventName, mockPayload, additionalParams = {}) {
   jest.mock(
     "/github/workspace/event.json",
     () => {
@@ -217,6 +283,7 @@ function testEnv(tools, eventName, mockPayload) {
   const params = {
     GITHUB_EVENT_NAME: eventName,
     GITHUB_EVENT_PATH: "/github/workspace/event.json",
+    ...additionalParams,
   };
 
   const r = mockedEnv(params);
