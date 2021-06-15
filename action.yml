@@ -1,17 +1,19 @@
 name: Issue Management
 description: Automatically manage issue comments
 runs:
-  using: docker
-  image: Dockerfile
+  using: node12
+  main: dist/index.js
 branding:
   icon: tag
   color: blue
 inputs:
   necromancer_delay:
-    default: "P7D"
-    description: "The amount of time that an issue must be closed before new comments are considered necromancy"
+    default: P7D
+    description: >-
+      The amount of time that an issue must be closed before new comments are
+      considered necromancy
     required: false
   disable_auto_assign:
-    default: "off"
-    description: "Set to 'on' to disable automatic issue assignment when a comment is added"
+    default: 'off'
+    description: Set to 'on' to disable automatic issue assignment when a comment is added
     required: false
