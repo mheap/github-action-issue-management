@@ -1,5 +1,6 @@
 const { Toolkit } = require("actions-toolkit");
 const router = require("@mheap/action-router");
+const { parse, end } = require("iso8601-duration");
 
 Toolkit.run(async (tools) => {
   await router(
@@ -45,8 +46,20 @@ async function onIssueComment(tools) {
 
   // If it's already closed
   if (payload.issue.closed_at) {
+    // Commenting is not considered necromancy if they are a collaborator
     if (!allowed.includes(perms.permission)) {
-      await addLabels(tools, ["necromancer"]);
+      // Otherwise we check if the threshold has been met, or if this feature is disabled
+      const necromancerDelay = tools.inputs.necromancer_delay;
+      if (necromancerDelay !== "off") {
+        // Has the grace period for adding comments ended?
+        const now = Date.now();
+        const closedDate = new Date(payload.issue.closed_at);
+        const cutoffDate = end(parse(necromancerDelay), closedDate);
+
+        if (now > cutoffDate) {
+          await addLabels(tools, ["necromancer"]);
+        }
+      }
     }
     return;
   }

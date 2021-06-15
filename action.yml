@@ -6,3 +6,8 @@ runs:
 branding:
   icon: tag
   color: blue
+inputs:
+  necromancer_delay:
+    default: "P7D"
+    description: "The amount of time that an issue must be closed before new comments are considered necromancy"
+    required: false
